@@ -17,12 +17,11 @@ variable "cidr_block" {
     error_message = "The value of cidr_block variable must be a valid CIDR address with a prefix no greater than 30."
   }
 }
-variable "tenancy_ocid" {
-  description = "OCID of the tenancy"
+variable "OCI_TENANCY_OCID" {
+  description = "The OCID of the OCI Tenancy"
   type        = string
-  nullable    = false
+  sensitive   = true
 }
-
 variable "name" {
   description = "Display name for resources"
   type        = string
