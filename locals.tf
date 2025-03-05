@@ -1,8 +1,9 @@
 locals {
-  protocol_number = {
-    icmp   = 1
-    icmpv6 = 58
-    tcp    = 6
-    udp    = 17
+  subnets = {
+    "database"    = 6,
+    "elasticache" = 6,
+    "intra"       = 5,
+    "private"     = 3,
+    "public"      = 5,
   }
 }
