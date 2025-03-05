@@ -1,11 +1,10 @@
 # main.tf
 
 resource "oci_identity_compartment" "this" {
-  compartment_id = var.tenancy_ocid
+  compartment_id = var.OCI_TENANCY_OCID
   description    = var.name
   name           = replace(var.name, " ", "-")
-
-  enable_delete = true
+  enable_delete  = true
 }
 
 resource "random_integer" "this" {
@@ -51,7 +50,7 @@ resource "oci_core_subnet" "this" {
 }
 
 data "oci_identity_availability_domains" "this" {
-  compartment_id = var.tenancy_ocid
+  compartment_id = oci_identity_compartment.this.id
 }
 
 resource "random_shuffle" "this" {
