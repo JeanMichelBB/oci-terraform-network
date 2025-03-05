@@ -1,14 +1,22 @@
-variable "azs" {
-  description = "List of availability zones (ADs) for the network"
-  type        = list(string)
+# // variables.tf
+
+variable "region" {
+  description = "The OCI region to deploy to."
 }
 
 variable "cidr" {
-  description = "CIDR block for the VCN"
-  type        = string
+  description = "The CIDR block for the VCN."
+}
+
+variable "azs" {
+  description = "A list of availability zones."
+  type = list(string)
 }
 
 variable "name" {
-  description = "Name of the network"
-  type        = string
+  description = "The name of the network."
+}
+
+variable "compartment_id" {
+  description = "The OCI compartment ID."
 }
