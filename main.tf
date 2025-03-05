@@ -1,60 +1,45 @@
-# main.tf
+module "subnets" {
+  source  = "oracle/oci/subnets"
+  version = "1.0.0"
 
-resource "oci_identity_compartment" "this" {
-  compartment_id = var.OCI_TENANCY_OCID
-  description    = var.name
-  name           = replace(var.name, " ", "-")
-  enable_delete  = true
+  base_cidr_block = var.cidr
+
+  networks = flatten([
+    for k, v in local.subnets : [
+      for az in var.azs : {
+        name     = "${k}-${az}"
+        new_bits = v
+      }
+    ]
+  ])
 }
 
-resource "random_integer" "this" {
-  min = 0
-  max = 255
-}
+module "vpc" {
+  source  = "oracle/oci/vpc"
+  version = "1.0.0"
 
-resource "oci_core_vcn" "this" {
-  compartment_id = oci_identity_compartment.this.id
+  cidr                    = var.cidr
+  azs                     = var.azs
+  enable_nat_gateway      = true
+  one_nat_gateway_per_az  = false
+  single_nat_gateway      = true
+  name                    = var.name
+  private_subnets         = [for az in var.azs : module.subnets.network_cidr_blocks["private-${az}"]]
+  public_subnets          = [for az in var.azs : module.subnets.network_cidr_blocks["public-${az}"]]
+  database_subnets        = [for az in var.azs : module.subnets.network_cidr_blocks["database-${az}"]]
+  elasticache_subnets     = [for az in var.azs : module.subnets.network_cidr_blocks["elasticache-${az}"]]
+  intra_subnets           = [for az in var.azs : module.subnets.network_cidr_blocks["intra-${az}"]]
 
-  cidr_blocks  = [coalesce(var.cidr_block, "192.168.${random_integer.this.result}.0/24")]
-  display_name = var.name
-  dns_label    = "vcn"
-}
-
-resource "oci_core_internet_gateway" "this" {
-  compartment_id = oci_identity_compartment.this.id
-  vcn_id         = oci_core_vcn.this.id
-
-  display_name = oci_core_vcn.this.display_name
-}
-
-resource "oci_core_default_route_table" "this" {
-  manage_default_resource_id = oci_core_vcn.this.default_route_table_id
-
-  display_name = oci_core_vcn.this.display_name
-
-  route_rules {
-    network_entity_id = oci_core_internet_gateway.this.id
-
-    description = "Default route"
-    destination = "0.0.0.0/0"
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = 1
   }
-}
 
-resource "oci_core_subnet" "this" {
-  cidr_block     = oci_core_vcn.this.cidr_blocks.0
-  compartment_id = oci_identity_compartment.this.id
-  vcn_id         = oci_core_vcn.this.id
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = 1
+  }
 
-  display_name = oci_core_vcn.this.display_name
-  dns_label    = "subnet"
-}
-
-data "oci_identity_availability_domains" "this" {
-  compartment_id = oci_identity_compartment.this.id
-}
-
-resource "random_shuffle" "this" {
-  input = data.oci_identity_availability_domains.this.availability_domains[*].name
-
-  result_count = 1
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
 }

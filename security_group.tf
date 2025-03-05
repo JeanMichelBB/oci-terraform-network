@@ -1,42 +1,146 @@
-# security_group.tf
+resource "oci_core_security_group" "db_security_group" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.vpc_network.id
+  display_name   = "${var.name}-db"
 
-resource "oci_core_default_security_list" "this" {
-  manage_default_resource_id = oci_core_vcn.this.default_security_list_id
-
-  dynamic "ingress_security_rules" {
-    for_each = [22, 80, 443]
-    iterator = port
-    content {
-      protocol = local.protocol_number.tcp
-      source   = "0.0.0.0/0"
-
-      description = "SSH and HTTPS traffic from any origin"
-
-      tcp_options {
-        max = port.value
-        min = port.value
-      }
-    }
-  }
-
-  egress_security_rules {
-    destination = "0.0.0.0/0"
-    protocol    = "all"
-
-    description = "All traffic to any destination"
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
   }
 }
 
-resource "oci_core_network_security_group" "this" {
-  compartment_id = oci_identity_compartment.this.id
-  vcn_id         = oci_core_vcn.this.id
+resource "oci_core_security_rule" "db_ingress_rule" {
+  security_group_id = oci_core_security_group.db_security_group.id
+  direction         = "INGRESS"
+  protocol          = "6"  # TCP
+  source            = "0.0.0.0/0"
+  tcp_options {
+    min = 0
+    max = 65535
+  }
 
-  display_name = oci_core_vcn.this.display_name
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
 }
 
-resource "oci_core_network_security_group_security_rule" "this" {
-  direction                 = "INGRESS"
-  network_security_group_id = oci_core_network_security_group.this.id
-  protocol                  = local.protocol_number.icmp
-  source                    = "0.0.0.0/0"
+resource "oci_core_security_rule" "db_ingress_private" {
+  security_group_id = oci_core_security_group.db_security_group.id
+  direction         = "INGRESS"
+  protocol          = "6"  # TCP
+  source_security_group_id = oci_core_security_group.private_security_group.id
+  tcp_options {
+    min = 5432
+    max = 5432
+  }
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+
+resource "oci_core_security_rule" "db_egress_rule" {
+  security_group_id = oci_core_security_group.db_security_group.id
+  direction         = "EGRESS"
+  protocol          = "all"
+  destination       = "0.0.0.0/0"
+  
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+resource "oci_core_security_group" "elasticache_security_group" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.vpc_network.id
+  display_name   = "${var.name}-elasticache"
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+
+resource "oci_core_security_rule" "elasticache_ingress_rule" {
+  security_group_id = oci_core_security_group.elasticache_security_group.id
+  direction         = "INGRESS"
+  protocol          = "6"  # TCP
+  source            = "0.0.0.0/0"
+  tcp_options {
+    min = 0
+    max = 65535
+  }
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+
+resource "oci_core_security_rule" "elasticache_ingress_private" {
+  security_group_id = oci_core_security_group.elasticache_security_group.id
+  direction         = "INGRESS"
+  protocol          = "6"  # TCP
+  source_security_group_id = oci_core_security_group.private_security_group.id
+  tcp_options {
+    min = 6379
+    max = 6379
+  }
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+
+resource "oci_core_security_rule" "elasticache_egress_rule" {
+  security_group_id = oci_core_security_group.elasticache_security_group.id
+  direction         = "EGRESS"
+  protocol          = "all"
+  destination       = "0.0.0.0/0"
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+resource "oci_core_security_group" "private_security_group" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.vpc_network.id
+  display_name   = "${var.name}-private"
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+
+resource "oci_core_security_rule" "private_ingress_rule" {
+  security_group_id = oci_core_security_group.private_security_group.id
+  direction         = "INGRESS"
+  protocol          = "6"  # TCP
+  source            = "0.0.0.0/0"
+  tcp_options {
+    min = 0
+    max = 65535
+  }
+
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
+}
+
+resource "oci_core_security_rule" "private_egress_rule" {
+  security_group_id = oci_core_security_group.private_security_group.id
+  direction         = "EGRESS"
+  protocol          = "all"
+  destination       = "0.0.0.0/0"
+  
+  tags = {
+    Network   = var.name
+    Terraform = "terraform-oci-network"
+  }
 }
