@@ -3,12 +3,10 @@ variable "fingerprint" {
   type        = string
   description = "OCI API Key Fingerprint"
 }
-
 variable "private_key" {
   type        = string
-  description = "Private Key for OCI API"
+  description = "Base64-encoded Private Key for OCI API"
 }
-
 variable "region" {
   type        = string
   description = "OCI Region"
