@@ -5,12 +5,14 @@ provider "oci" {
   private_key  = base64decode(var.private_key)
   region       = var.region
 }
+
 resource "oci_core_vcn" "main" {
   compartment_id = var.compartment_id
   cidr_block     = var.vcn_cidr
   display_name   = "MyVCN"
   dns_label      = "myvcn"
 }
+
 resource "oci_core_subnet" "database" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
@@ -36,16 +38,13 @@ resource "oci_core_subnet" "public" {
   security_list_ids = [oci_core_security_list.public.id]  # Attach the security list to this subnet
   route_table_id    = oci_core_route_table.public_rt.id
 }
+
 resource "oci_core_internet_gateway" "igw" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
   display_name   = "Internet Gateway"
 }
-resource "oci_core_nat_gateway" "nat" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  display_name   = "NAT Gateway"
-}
+
 resource "oci_core_route_table" "public_rt" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
@@ -56,17 +55,13 @@ resource "oci_core_route_table" "public_rt" {
     network_entity_id = oci_core_internet_gateway.igw.id
   }
 }
+
 resource "oci_core_route_table" "private_rt" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
   display_name   = "Private Route Table"
-
-  route_rules {
-    destination       = "0.0.0.0/0"
-    network_entity_id = oci_core_nat_gateway.nat.id
-  }
 }
-# Define a security list for public access (if needed)
+
 resource "oci_core_security_list" "public" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
@@ -75,7 +70,7 @@ resource "oci_core_security_list" "public" {
   egress_security_rules {
     destination = "0.0.0.0/0"
     stateless   = false
-    protocol    = "TCP"
+    protocol    = "ALL_TCP"
   }
 
   ingress_security_rules {
