@@ -63,20 +63,3 @@ resource "oci_core_route_table" "private_rt" {
     network_entity_id = oci_core_nat_gateway.nat.id
   }
 }
-resource "oci_core_subnet" "public" {
-  compartment_id  = var.compartment_id
-  vcn_id          = oci_core_vcn.main.id
-  cidr_block      = var.subnet_cidrs["public"]
-  display_name    = "Public Subnet"
-  dns_label       = "publicsubnet"
-  route_table_id  = oci_core_route_table.public_rt.id
-}
-
-resource "oci_core_subnet" "private" {
-  compartment_id  = var.compartment_id
-  vcn_id          = oci_core_vcn.main.id
-  cidr_block      = var.subnet_cidrs["private"]
-  display_name    = "Private Subnet"
-  dns_label       = "privatesubnet"
-  route_table_id  = oci_core_route_table.private_rt.id
-}

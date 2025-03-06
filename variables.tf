@@ -35,12 +35,6 @@ variable "vcn_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "region" {
-  description = "OCI Region"
-  type        = string
-  default     = "ca-montreal-1"
-}
-
 variable "availability_domains" {
   description = "List of availability domains"
   type        = list(string)
