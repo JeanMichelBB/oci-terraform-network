@@ -66,13 +66,7 @@ resource "oci_core_security_list" "public" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
   display_name   = "Public Security List"
-
-  egress_security_rules {
-    destination = "0.0.0.0/0"
-    stateless   = false
-    protocol    = "6" 
-  }
-
+  
   ingress_security_rules {
     source      = "0.0.0.0/0"
     stateless   = false
@@ -80,6 +74,16 @@ resource "oci_core_security_list" "public" {
     tcp_options {
       min = 80
       max = 80
+    }
+  }
+  
+  ingress_security_rules {
+    source      = "0.0.0.0/0"
+    stateless   = false
+    protocol    = "1"  
+    icmp_options {
+      type = 3     
+      code = 4     
     }
   }
 }
