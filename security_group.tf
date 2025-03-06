@@ -1,4 +1,3 @@
-# // security_group.tf
 resource "oci_core_network_security_group" "db_sg" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
