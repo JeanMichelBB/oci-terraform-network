@@ -70,13 +70,13 @@ resource "oci_core_security_list" "public" {
   egress_security_rules {
     destination = "0.0.0.0/0"
     stateless   = false
-    protocol    = "TCP"
+    protocol    = "6" 
   }
 
   ingress_security_rules {
     source      = "0.0.0.0/0"
     stateless   = false
-    protocol    = "TCP"
+    protocol    = "6" 
     tcp_options {
       min = 80
       max = 80
