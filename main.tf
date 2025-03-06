@@ -1,107 +1,82 @@
-# // main.tf
-# Define the provider for OCI
 provider "oci" {
-  region = var.region
+  tenancy_ocid     = var.tenancy_ocid
+  user_ocid        = var.user_ocid
+  fingerprint      = var.fingerprint
+  private_key      = var.private_key
+  region           = var.region
 }
-
-# Create a Virtual Cloud Network (VCN)
-resource "oci_core_virtual_network" "vcn" {
-  cidr_block = var.cidr
-  display_name = var.name
+resource "oci_core_vcn" "main" {
   compartment_id = var.compartment_id
-  dns_label = "vcn"
+  cidr_block     = var.vcn_cidr
+  display_name   = "MyVCN"
+}
+resource "oci_core_subnet" "database" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  cidr_block     = var.subnet_cidrs["database"]
+  display_name   = "Database Subnet"
+  dns_label      = "dbsubnet"
 }
 
-# Create an Internet Gateway (IGW) for the VCN
+resource "oci_core_subnet" "private" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  cidr_block     = var.subnet_cidrs["private"]
+  display_name   = "Private Subnet"
+  dns_label      = "privatesubnet"
+}
+
+resource "oci_core_subnet" "public" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  cidr_block     = var.subnet_cidrs["public"]
+  display_name   = "Public Subnet"
+  dns_label      = "publicsubnet"
+}
 resource "oci_core_internet_gateway" "igw" {
-  display_name = "internet_gateway"
-  vcn_id = oci_core_virtual_network.vcn.id
-  is_enabled = true
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "Internet Gateway"
 }
-
-# Create a NAT Gateway for private subnets
-resource "oci_core_nat_gateway" "nat_gateway" {
-  display_name = "nat_gateway"
-  vcn_id = oci_core_virtual_network.vcn.id
+resource "oci_core_nat_gateway" "nat" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "NAT Gateway"
 }
-
-# Create subnets for different services (private, public, database, elasticache, etc.)
-resource "oci_core_subnet" "public_subnet" {
-  count = length(var.azs)
-
-  display_name = "public-subnet-${var.azs[count.index]}"
-  vcn_id = oci_core_virtual_network.vcn.id
-  cidr_block = module.subnets.network_cidr_blocks["public-${var.azs[count.index]}"]
-  availability_domain = var.azs[count.index]
-  route_table_id = oci_core_route_table.public_route_table.id
-}
-
-resource "oci_core_subnet" "private_subnet" {
-  count = length(var.azs)
-
-  display_name = "private-subnet-${var.azs[count.index]}"
-  vcn_id = oci_core_virtual_network.vcn.id
-  cidr_block = module.subnets.network_cidr_blocks["private-${var.azs[count.index]}"]
-  availability_domain = var.azs[count.index]
-  route_table_id = oci_core_route_table.private_route_table.id
-}
-
-resource "oci_core_subnet" "database_subnet" {
-  count = length(var.azs)
-
-  display_name = "database-subnet-${var.azs[count.index]}"
-  vcn_id = oci_core_virtual_network.vcn.id
-  cidr_block = module.subnets.network_cidr_blocks["database-${var.azs[count.index]}"]
-  availability_domain = var.azs[count.index]
-}
-
-resource "oci_core_subnet" "elasticache_subnet" {
-  count = length(var.azs)
-
-  display_name = "elasticache-subnet-${var.azs[count.index]}"
-  vcn_id = oci_core_virtual_network.vcn.id
-  cidr_block = module.subnets.network_cidr_blocks["elasticache-${var.azs[count.index]}"]
-  availability_domain = var.azs[count.index]
-}
-
-# Create Route Tables for public and private subnets
-resource "oci_core_route_table" "public_route_table" {
-  display_name = "public_route_table"
-  vcn_id = oci_core_virtual_network.vcn.id
+resource "oci_core_route_table" "public_rt" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "Public Route Table"
 
   route_rules {
-    destination = "0.0.0.0/0"
-    network_gateway = oci_core_internet_gateway.igw.id
+    destination       = "0.0.0.0/0"
+    network_entity_id = oci_core_internet_gateway.igw.id
   }
 }
-
-resource "oci_core_route_table" "private_route_table" {
-  display_name = "private_route_table"
-  vcn_id = oci_core_virtual_network.vcn.id
+resource "oci_core_route_table" "private_rt" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "Private Route Table"
 
   route_rules {
-    destination = "0.0.0.0/0"
-    nat_gateway = oci_core_nat_gateway.nat_gateway.id
+    destination       = "0.0.0.0/0"
+    network_entity_id = oci_core_nat_gateway.nat.id
   }
 }
-
-# Output the VCN ID and Subnet CIDR Blocks
-output "vcn_id" {
-  value = oci_core_virtual_network.vcn.id
+resource "oci_core_subnet" "public" {
+  compartment_id  = var.compartment_id
+  vcn_id          = oci_core_vcn.main.id
+  cidr_block      = var.subnet_cidrs["public"]
+  display_name    = "Public Subnet"
+  dns_label       = "publicsubnet"
+  route_table_id  = oci_core_route_table.public_rt.id
 }
 
-output "public_subnet_cidrs" {
-  value = [for subnet in oci_core_subnet.public_subnet : subnet.cidr_block]
-}
-
-output "private_subnet_cidrs" {
-  value = [for subnet in oci_core_subnet.private_subnet : subnet.cidr_block]
-}
-
-output "database_subnet_cidrs" {
-  value = [for subnet in oci_core_subnet.database_subnet : subnet.cidr_block]
-}
-
-output "elasticache_subnet_cidrs" {
-  value = [for subnet in oci_core_subnet.elasticache_subnet : subnet.cidr_block]
+resource "oci_core_subnet" "private" {
+  compartment_id  = var.compartment_id
+  vcn_id          = oci_core_vcn.main.id
+  cidr_block      = var.subnet_cidrs["private"]
+  display_name    = "Private Subnet"
+  dns_label       = "privatesubnet"
+  route_table_id  = oci_core_route_table.private_rt.id
 }
