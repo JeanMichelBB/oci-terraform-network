@@ -70,7 +70,7 @@ resource "oci_core_security_list" "public" {
   egress_security_rules {
     destination = "0.0.0.0/0"
     stateless   = false
-    protocol    = "ALL_TCP"
+    protocol    = "TCP"
   }
 
   ingress_security_rules {
