@@ -9,6 +9,7 @@ resource "oci_core_vcn" "main" {
   compartment_id = var.compartment_id
   cidr_block     = var.vcn_cidr
   display_name   = "MyVCN"
+  dns_label      = "myvcn"
 }
 resource "oci_core_subnet" "database" {
   compartment_id = var.compartment_id
@@ -74,13 +75,13 @@ resource "oci_core_security_list" "public" {
   egress_security_rules {
     destination = "0.0.0.0/0"
     stateless   = false
-    protocol    = "all"
+    protocol    = "TCP"
   }
 
   ingress_security_rules {
     source      = "0.0.0.0/0"
     stateless   = false
-    protocol    = "all"
+    protocol    = "TCP"
     tcp_options {
       min = 80
       max = 80
