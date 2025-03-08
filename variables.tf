@@ -48,3 +48,34 @@ variable "subnet_cidrs" {
     public      = "10.0.3.0/24"
   }
 }
+variable "instance_image_ocid" {
+  type = map(string)
+  default = {
+    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaalvgfn6kf2zyv3drlek345dkcsf7zmzycd4jcpbfdxtniyax25vpa"
+  }
+}
+variable "instance_shape" {
+  type        = string
+  description = "The shape of the instance"
+  default     = "VM.Standard2.1.Micro"
+}
+variable "instance_ocpus" {
+  default     = 1
+  description = "Number of OCPUs"
+  type        = number
+}
+variable "instance_shape_config_memory_in_gbs" {
+  default     = 1
+  description = "Amount of Memory (GB)"
+  type        = number
+}
+variable "instance_name" {
+  description = "Name of the instance."
+  type        = string
+  default = "my-instance"
+}
+variable "boot_volume_size_in_gbs" {
+  default     = "50"
+  description = "Bott volume size in GBs"
+  type        = number
+}
