@@ -7,6 +7,10 @@ variable "private_key" {
   type        = string
   description = "Base64-encoded Private Key for OCI API"
 }
+variable "public_key" {
+  description = "Public key for SSH access"
+  type        = string
+}
 variable "region" {
   type        = string
   description = "OCI Region"
