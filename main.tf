@@ -25,7 +25,7 @@ resource "oci_core_subnet" "my_subnet" {
   cidr_block     = "10.0.1.0/24"
   display_name   = "my-subnet"
   compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.my_vcn.id
+  vcn_id = oci_core_vcn.main.id 
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
 }
 
