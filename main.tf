@@ -30,36 +30,36 @@ resource "oci_core_subnet" "my_subnet" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
 }
 
-
-data "oci_core_images" "ubuntu_image" {
-  compartment_id = var.compartment_id
-  operating_system = "Ubuntu"
-  operating_system_version = "22.04"
-  shape = "VM.Standard2.1.Micro"  
-}
-
-output "ubuntu_image_id" {
-  value = data.oci_core_images.ubuntu_image.images[0].id
-}
-
 resource "oci_core_instance" "my_instance" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
-  shape               = "VM.Standard2.1.Micro"
-  display_name        = "Ubuntu-Instance"
+  shape               = var.instance_shape
+  display_name        = format("%s${count.index}", replace(title(var.instance_name), "/\\s/", ""))
+
+  shape_config {
+    ocpus         = var.instance_ocpus
+    memory_in_gbs = var.instance_shape_config_memory_in_gbs
+  }
 
   create_vnic_details {
-    subnet_id = oci_core_subnet.my_subnet.id
-    assign_public_ip = true
+    subnet_id                 = oci_core_subnet.my_subnet.id
+    display_name              = format("%sVNIC", replace(title(var.instance_name), "/\\s/", ""))
+    assign_public_ip          = true
+    assign_private_dns_record = true
+    hostname_label            = format("%s${count.index}", lower(replace(var.instance_name, "/\\s/", "")))
   }
 
   source_details {
     source_type = "image"
-    source_id   = data.oci_core_images.ubuntu_image.images[0].id
+    source_id   = var.instance_image_ocid[var.region]
+    boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
   }
 
   metadata = {
     ssh_authorized_keys = base64decode(var.private_key)
+  }
+    timeouts {
+    create = "60m"
   }
 }
 
