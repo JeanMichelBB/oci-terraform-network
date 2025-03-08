@@ -34,7 +34,7 @@ resource "oci_core_instance" "my_instance" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
   shape               = var.instance_shape
-  display_name        = format("%s${count.index}", replace(title(var.instance_name), "/\\s/", ""))
+  display_name        = replace(title(var.instance_name), "/\\s/", "")
 
   shape_config {
     ocpus         = var.instance_ocpus
@@ -46,7 +46,7 @@ resource "oci_core_instance" "my_instance" {
     display_name              = format("%sVNIC", replace(title(var.instance_name), "/\\s/", ""))
     assign_public_ip          = true
     assign_private_dns_record = true
-    hostname_label            = format("%s${count.index}", lower(replace(var.instance_name, "/\\s/", "")))
+    hostname_label            = lower(replace(var.instance_name, "/\\s/", ""))
   }
 
   source_details {
@@ -58,7 +58,7 @@ resource "oci_core_instance" "my_instance" {
   metadata = {
     ssh_authorized_keys = base64decode(var.private_key)
   }
-    timeouts {
+  timeouts {
     create = "60m"
   }
 }
