@@ -1,25 +1,24 @@
-# resource "oci_core_network_security_group" "db_sg" {
-#   compartment_id = var.compartment_id
-#   vcn_id         = oci_core_vcn.main.id
-#   display_name   = "Database Security Group"
-# }
+# security_group.tf
+resource "oci_core_security_list" "cluster_security_group" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "cluster-security-group"
 
-# resource "oci_core_network_security_group" "private_sg" {
-#   compartment_id = var.compartment_id
-#   vcn_id         = oci_core_vcn.main.id
-#   display_name   = "Private Security Group"
-# }
+  ingress_security_rules {
+    protocol    = "6"
+    source      = "0.0.0.0/0"
+    tcp_options {
+        min = 80
+        max = 80
+    }
+  }
 
-# resource "oci_core_network_security_group_security_rule" "allow_db_private" {
-#   network_security_group_id = oci_core_network_security_group.db_sg.id
-#   direction                = "INGRESS"
-#   protocol                 = "6"  # TCP
-#   source_type              = "NETWORK_SECURITY_GROUP"
-#   source                   = oci_core_network_security_group.private_sg.id
-#   tcp_options {
-#     destination_port_range {
-#       min = 1521
-#       max = 1521
-#     }
-#   }
-# }
+  egress_security_rules {
+    protocol    = "6"
+    destination = "0.0.0.0/0"
+    tcp_options {
+        min = 443
+        max = 443
+    }
+  }
+}
