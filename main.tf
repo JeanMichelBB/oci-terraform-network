@@ -56,7 +56,7 @@ resource "oci_core_instance" "my_instance" {
   }
 
   metadata = {
-    ssh_authorized_keys = base64decode(var.public_key)
+    ssh_authorized_keys = var.public_key
   }
   timeouts {
     create = "60m"
