@@ -10,80 +10,34 @@ resource "oci_core_vcn" "main" {
   compartment_id = var.compartment_id
   cidr_block     = var.vcn_cidr
   display_name   = "MyVCN"
-  dns_label      = "myvcn"
+  # dns_label      = "myvcn"
 }
 
-resource "oci_core_subnet" "database" {
+data "oci_identity_availability_domains" "ads" {
   compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  cidr_block     = var.subnet_cidrs["database"]
-  display_name   = "Database Subnet"
-  dns_label      = "dbsubnet"
 }
 
-resource "oci_core_subnet" "private" {
+output "availability_domain_name" {
+  value = data.oci_identity_availability_domains.ads.availability_domains[0].name
+}
+
+resource "oci_core_subnet" "my_subnet" {
+  cidr_block     = "10.0.1.0/24"
+  display_name   = "my-subnet"
   compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  cidr_block     = var.subnet_cidrs["private"]
-  display_name   = "Private Subnet"
-  dns_label      = "privatesubnet"
+  vcn_id = oci_core_vcn.main.id 
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
 }
 
-resource "oci_core_subnet" "public" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  cidr_block     = var.subnet_cidrs["public"]
-  display_name   = "Public Subnet"
-  dns_label      = "publicsubnet"
-  security_list_ids = [oci_core_security_list.public.id]  # Attach the security list to this subnet
-  route_table_id    = oci_core_route_table.public_rt.id
-}
+# resource "oci_core_volume" "my_volume" {
+#   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+#   compartment_id      = var.compartment_id
+#   display_name        = "my-volume"
+#   size_in_gbs         = 50
+# }
 
-resource "oci_core_internet_gateway" "igw" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  display_name   = "Internet Gateway"
-}
-
-resource "oci_core_route_table" "public_rt" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  display_name   = "Public Route Table"
-
-  route_rules {
-    destination       = "0.0.0.0/0"
-    network_entity_id = oci_core_internet_gateway.igw.id
-  }
-}
-
-resource "oci_core_route_table" "private_rt" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  display_name   = "Private Route Table"
-}
-
-resource "oci_core_security_list" "public" {
-  compartment_id = var.compartment_id
-  vcn_id         = oci_core_vcn.main.id
-  display_name   = "Public Security List"
-  
-  ingress_security_rules {
-    source      = "0.0.0.0/0"
-    stateless   = false
-    protocol    = "6" 
-    tcp_options {
-      min = 80
-      max = 80
-    }
-  }
-  
-  ingress_security_rules {
-    source      = "0.0.0.0/0"
-    stateless   = false
-    protocol    = "1"  
-    icmp_options {
-      type = 3     
-      code = 4     
-    }
-  }
-}
+# resource "oci_core_volume_attachment" "my_volume_attachment" {
+#   instance_id    = oci_core_instance.my_instance.id
+#   volume_id      = oci_core_volume.my_volume.id
+#   attachment_type = "iscsi"
+# }
