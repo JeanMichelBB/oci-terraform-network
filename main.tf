@@ -23,10 +23,10 @@ output "availability_domain_name" {
 }
 
 resource "oci_core_subnet" "my_subnet" {
-  cidr_block     = "10.0.1.0/24"
-  display_name   = "my-subnet"
-  compartment_id = var.compartment_id
-  vcn_id = oci_core_vcn.main.id 
+  cidr_block          = "10.0.1.0/24"
+  display_name        = "my-subnet"
+  compartment_id      = var.compartment_id
+  vcn_id              = oci_core_vcn.main.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
 }
 
@@ -50,13 +50,13 @@ resource "oci_core_instance" "my_instance" {
   }
 
   source_details {
-    source_type = "image"
-    source_id   = var.instance_image_ocid[var.region]
+    source_type             = "image"
+    source_id               = var.instance_image_ocid[var.region]
     boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
   }
 
   metadata = {
-    ssh_authorized_keys = base64decode(var.private_key)
+    ssh_authorized_keys = base64decode(var.public_key)
   }
   timeouts {
     create = "60m"
@@ -71,7 +71,7 @@ resource "oci_core_volume" "my_volume" {
 }
 
 resource "oci_core_volume_attachment" "my_volume_attachment" {
-  instance_id    = oci_core_instance.my_instance.id
-  volume_id      = oci_core_volume.my_volume.id
+  instance_id     = oci_core_instance.my_instance.id
+  volume_id       = oci_core_volume.my_volume.id
   attachment_type = "iscsi"
 }
