@@ -11,7 +11,7 @@ resource "oci_core_vcn" "main" {
   compartment_id = var.compartment_id
   cidr_block     = var.vcn_cidr
   display_name   = "MyVCN"
-  dns_label = "myvcn"
+  dns_label      = "myvcn"
 }
 
 data "oci_identity_availability_domains" "ads" {
