@@ -35,3 +35,20 @@ resource "oci_core_security_list" "cluster_security_group" {
     }
   }
 }
+
+resource "oci_identity_user" "user" {
+  compartment_id = var.compartment_id
+  name           = "admin"
+  description    = "Admin User"
+}
+
+resource "oci_identity_group" "group" {
+  compartment_id = var.compartment_id
+  name           = "Administrators"
+  description    = "Administrators Group"
+}
+
+resource "oci_identity_user_group_membership" "user_group_membership" {
+  user_id  = oci_identity_user.user.id
+  group_id = oci_identity_group.group.id
+}
