@@ -55,7 +55,7 @@ variable "subnet_cidrs" {
 variable "instance_image_ocid" {
   type = map(string)
   default = {
-    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaa6apcspvi563o3a3w72v5ke3rl73zd7ozwlpd7nddncdty46gwhaa"
+    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaa5d4pqtue7bivcsharkzky3xgiixmmychclwozjfsxdp7ttree2tq"
   }
 }
 variable "instance_shape" {
