@@ -58,6 +58,7 @@ resource "oci_core_instance" "my_instance" {
 
   metadata = {
     ssh_authorized_keys = var.public_key
+    # user_data           = data.cloudinit_config.this.rendered
   }
 
   timeouts {
@@ -76,4 +77,95 @@ resource "oci_core_volume_attachment" "my_volume_attachment" {
   instance_id     = oci_core_instance.my_instance.id
   volume_id       = oci_core_volume.my_volume.id
   attachment_type = "iscsi"
+}
+
+resource "oci_core_security_list" "cluster_security_group" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = "cluster-security-group"
+
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 80
+      max = 80
+    }
+  }
+
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
+
+  ingress_security_rules {
+    protocol = "8"
+    source   = "0.0.0.0/0"
+  }
+
+  egress_security_rules {
+    protocol    = "6"
+    destination = "0.0.0.0/0"
+    tcp_options {
+      min = 443
+      max = 443
+    }
+  }
+}
+resource "oci_core_internet_gateway" "internet_gateway" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+
+  display_name = oci_core_vcn.main.display_name
+}
+
+resource "oci_core_default_route_table" "default_route_table" {
+  manage_default_resource_id = oci_core_vcn.main.default_route_table_id
+
+  display_name = oci_core_vcn.main.display_name
+
+  route_rules {
+    network_entity_id = oci_core_internet_gateway.internet_gateway.id
+
+    description = "Default route"
+    destination = "0.0.0.0/0"
+  }
+}
+
+data "oci_core_private_ips" "this" {
+  ip_address = oci_core_instance.my_instance.private_ip
+  subnet_id  = oci_core_subnet.my_subnet.id
+}
+
+resource "oci_core_public_ip" "public_ip" {
+  compartment_id = var.compartment_id
+  lifetime       = "RESERVED"
+
+  display_name  = oci_core_instance.my_instance.display_name
+  private_ip_id = data.oci_core_private_ips.this.private_ips.0.id
+}
+
+data "cloudinit_config" "cloudinit" {
+  part {
+    filename     = "cloud-config"
+    content      = file("cloud-config.yaml")
+    content_type = "text/cloud-config"
+  }
+}
+
+resource "oci_core_network_security_group" "network_security_group" {
+  compartment_id = var.compartment_id
+  vcn_id         = oci_core_vcn.main.id
+  display_name   = oci_core_vcn.main.display_name
+}
+
+resource "oci_core_network_security_group_security_rule" "network_security_group_rule" {
+  direction                 = "INGRESS"
+  network_security_group_id = oci_core_network_security_group.network_security_group.id
+  protocol                  = "1"
+  source                    = "0.0.0.0/0"
 }
