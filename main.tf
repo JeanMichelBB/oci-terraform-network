@@ -28,14 +28,14 @@ resource "oci_core_subnet" "my_subnet" {
   compartment_id      = var.compartment_id
   vcn_id              = oci_core_vcn.main.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-  dns_label           = "my-subnet-dns" 
+  dns_label           = "mysubnet" 
 }
 
 resource "oci_core_instance" "my_instance" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
   shape               = var.instance_shape
-  display_name        = replace(title(var.instance_name), "/\\s/", "")
+  display_name        = "my-instance"
 
   shape_config {
     ocpus         = var.instance_ocpus
@@ -44,10 +44,10 @@ resource "oci_core_instance" "my_instance" {
 
   create_vnic_details {
     subnet_id                 = oci_core_subnet.my_subnet.id
-    display_name              = format("%sVNIC", replace(title(var.instance_name), "/\\s/", ""))
+    display_name              = "my-vnic"
     assign_public_ip          = true
     assign_private_dns_record = true
-    hostname_label            = lower(replace(var.instance_name, "/\\s/", ""))
+    hostname_label            = "myhostname"
   }
 
   source_details {
