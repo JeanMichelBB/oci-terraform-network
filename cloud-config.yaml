@@ -1,0 +1,41 @@
+#cloud-config
+
+# Set the hostname
+hostname: my-instance
+
+# Configure users
+users:
+  - name: ubuntu
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+
+# Packages to install
+packages:
+  - git
+  - curl
+  - vim
+
+# Run a script at startup
+runcmd:
+  - echo "Hello, World!" > /var/log/hello_world.log
+
+# Add a system group
+groups:
+  - mygroup
+
+# Configure network (example: setting static IP)
+write_files:
+  - path: /etc/netplan/00-installer-config.yaml
+    content: |
+      network:
+        version: 2
+        renderer: networkd
+        ethernets:
+          eth0:
+            dhcp4: true
+            dhcp6: true
+
+# Configure timezone (optional)
+timezone: "America/New_York"
+
