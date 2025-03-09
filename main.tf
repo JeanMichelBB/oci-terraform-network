@@ -58,7 +58,6 @@ resource "oci_core_instance" "my_instance" {
 
   metadata = {
     ssh_authorized_keys = var.public_key
-    # user_data           = data.cloudinit_config.this.rendered
   }
 
   timeouts {
@@ -133,27 +132,6 @@ resource "oci_core_default_route_table" "default_route_table" {
 
     description = "Default route"
     destination = "0.0.0.0/0"
-  }
-}
-
-data "oci_core_private_ips" "this" {
-  ip_address = oci_core_instance.my_instance.private_ip
-  subnet_id  = oci_core_subnet.my_subnet.id
-}
-
-resource "oci_core_public_ip" "public_ip" {
-  compartment_id = var.compartment_id
-  lifetime       = "RESERVED"
-
-  display_name  = oci_core_instance.my_instance.display_name
-  private_ip_id = data.oci_core_private_ips.this.private_ips.0.id
-}
-
-data "cloudinit_config" "cloudinit" {
-  part {
-    filename     = "cloud-config"
-    content      = file("cloud-config.yaml")
-    content_type = "text/cloud-config"
   }
 }
 
