@@ -14,7 +14,7 @@ resource "oci_core_security_list" "cluster_security_group" {
 
   ingress_security_rules {
     protocol    = "6"
-    source      = "0.0.0.0/0"
+    source      = "your.trusted.ip.range/32"  # Restrict SSH access to trusted IPs
     tcp_options {
         min = 22
         max = 22
@@ -22,7 +22,7 @@ resource "oci_core_security_list" "cluster_security_group" {
   }
 
   ingress_security_rules {
-    protocol    = "1"  # ICMP (Ping)
+    protocol    = "8"  
     source      = "0.0.0.0/0"
   }
 
@@ -51,4 +51,12 @@ resource "oci_identity_group" "group" {
 resource "oci_identity_user_group_membership" "user_group_membership" {
   user_id  = oci_identity_user.user.id
   group_id = oci_identity_group.group.id
+}
+
+output "user_id" {
+  value = oci_identity_user.user.id
+}
+
+output "group_id" {
+  value = oci_identity_group.group.id
 }
