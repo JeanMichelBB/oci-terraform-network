@@ -1,4 +1,4 @@
-# main.tf
+
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
   user_ocid    = var.user_ocid
@@ -58,6 +58,37 @@ resource "oci_core_instance" "my_instance" {
 
   metadata = {
     ssh_authorized_keys = var.public_key
+    user_data = base64encode(<<-EOF
+      #!/bin/bash
+      apt-get update -y
+      apt-get install -y docker.io
+      systemctl enable --now docker
+
+      # Docker login 
+      docker login -u ${var.username} -p ${var.password}
+
+      # Create the systemd service to run the React app container
+      cat <<EOF > /etc/systemd/system/react-app.service
+      [Unit]
+      Description=React App Docker Container
+      After=network.target
+
+      [Service]
+      ExecStartPre=/usr/bin/docker pull jeanmichelbb/oci-react:latest
+      ExecStart=/usr/bin/docker run -d -p 80:80 --name react-app jeanmichelbb/oci-react:latest
+      Restart=always
+      RestartSec=5s
+
+      [Install]
+      WantedBy=multi-user.target
+      EOT
+
+      # Reload systemd configuration, enable and start the service
+      systemctl daemon-reload
+      systemctl enable react-app.service
+      systemctl start react-app.service
+  EOF
+    )
   }
 
   timeouts {
@@ -147,3 +178,50 @@ resource "oci_core_network_security_group_security_rule" "network_security_group
   protocol                  = "1"
   source                    = "0.0.0.0/0"
 }
+
+# resource "oci_artifacts_container_repository" "repo" {
+#   compartment_id = var.compartment_id
+#   display_name   = "my-docker-repo"
+#   is_public      = false
+# }
+
+# resource "oci_container_instances_container_instance" "my_service" {
+#   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+#   compartment_id      = var.compartment_id
+#   display_name        = "my-container-instance"
+#   shape               = "VM.Standard.E2.1.Micro"
+
+#   shape_config {
+#     memory_in_gbs = 1
+#     ocpus         = 1
+#   }
+#   vnics {
+#     subnet_id             = oci_core_subnet.my_subnet.id
+#     display_name          = "demo-container-instance"
+#     is_public_ip_assigned = true
+#     nsg_ids               = []
+#   }
+
+#   containers {
+#     image_url    = "httpd:2.4"
+#     display_name = "demo apache http server container"
+#   }
+# }
+
+# resource "oci_identity_policy" "ocir_access_policy" {
+#   compartment_id = var.compartment_id
+#   name           = "OCIR-Pull-Access"
+#   description    = "Allow instance to pull images from OCIR"
+
+#   statements = [
+#     "Allow dynamic-group <DYNAMIC_GROUP_NAME> to read repos in tenancy"
+#   ]
+# }
+
+# resource "oci_identity_dynamic_group" "dynamic_group" {
+#   compartment_id = var.compartment_id
+#   name           = "Instance-Dynamic-Group"
+#   description    = "Dynamic group for container instance"
+
+#   matching_rule = "ALL {instance.compartment.id = '${var.compartment_id}'}"
+# }

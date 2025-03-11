@@ -83,3 +83,11 @@ variable "boot_volume_size_in_gbs" {
   description = "Bott volume size in GBs"
   type        = number
 }
+variable "username" {
+  description = "SSH Authorized Keys"
+  type        = string
+}
+variable "password" {
+  description = "SSH Authorized Keys"
+  type        = string
+}
