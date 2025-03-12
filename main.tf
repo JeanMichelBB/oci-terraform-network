@@ -28,6 +28,7 @@ resource "oci_core_subnet" "my_subnet" {
   compartment_id      = var.compartment_id
   vcn_id              = oci_core_vcn.main.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  security_list_ids   = [oci_core_security_list.cluster_security_group.id]
   dns_label           = "mysubnet"
 }
 
@@ -68,20 +69,20 @@ resource "oci_core_instance" "my_instance" {
       docker login -u ${var.username} -p ${var.password}
 
       # Create the systemd service to run the React app container
-      cat <<EOF > /etc/systemd/system/react-app.service
+      cat <<EOF2 > /etc/systemd/system/react-app.service
       [Unit]
       Description=React App Docker Container
       After=network.target
 
       [Service]
       ExecStartPre=/usr/bin/docker pull jeanmichelbb/oci-react:latest
-      ExecStart=/usr/bin/docker run -d -p 80:80 --name react-app jeanmichelbb/oci-react:latest
+      ExecStart=/usr/bin/docker run -p 80:80 --name react-app jeanmichelbb/oci-react:latest
       Restart=always
       RestartSec=5s
 
       [Install]
       WantedBy=multi-user.target
-      EOT
+      EOF2
 
       # Reload systemd configuration, enable and start the service
       systemctl daemon-reload
