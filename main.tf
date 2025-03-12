@@ -146,6 +146,10 @@ resource "oci_core_security_list" "cluster_security_group" {
       max = 443
     }
   }
+    egress_security_rules {
+    protocol = "all"
+    destination = "0.0.0.0/0"
+  }
 }
 resource "oci_core_internet_gateway" "internet_gateway" {
   compartment_id = var.compartment_id
