@@ -77,6 +77,8 @@ resource "oci_core_instance" "my_instance" {
       [Service]
       ExecStartPre=/usr/bin/docker pull jeanmichelbb/oci-react:latest
       ExecStart=/usr/bin/docker run -p 80:80 --name react-app jeanmichelbb/oci-react:latest
+      ExecStop=/usr/bin/docker stop react-app
+      ExecStopPost=/usr/bin/docker rm react-app
       Restart=always
       RestartSec=5s
 
