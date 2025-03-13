@@ -38,83 +38,22 @@ jobs:
             chmod 600 ~/.oci/config
             echo "Config file created at ~/.oci/config"
 
-      - name: Check OCI Instance lifecycle state
+      - name: Fetch instance public IP
         run: |
-            # Get all instance IDs with the name 'my-instance'
-            INSTANCE_IDS=($(oci compute instance list \
-                --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} \
-                --query "data[?\"display-name\"=='my-instance'].id" \
-                --raw-output))
-        
-            # Check if there are multiple instances
-                if [ ${#INSTANCE_IDS[@]} -gt 1 ]; then
-                    echo "Multiple instances found. Filtering for the running one."
-                    for ID in "${INSTANCE_IDS[@]}"; do
-                        STATE=$(oci compute instance get \
-                            --instance-id "$ID" \
-                            --query "data.\"lifecycle-state\"" \
-                            --raw-output)
-                        
-                        if [ "$STATE" == "RUNNING" ]; then
-                            INSTANCE_ID="$ID"
-                            echo "Found running instance: $INSTANCE_ID"
-                            break
-                        elif [ "$STATE" == "TERMINATED" ]; then
-                            echo "Instance $ID is terminated. Skipping..."
-                        fi
-                    done
+            PUBLIC_IP=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_OCID }} --query "data[?\"display-name\"=='my-instance'].id" --raw-output | jq -r '.[] | "oci compute instance list-vnics --instance-id \(. ) --query \"data[0].\\\"public-ip\\\"\" --raw-output"' | sh)
+
+            # Check if we received an IP address
+            if [[ -z "$PUBLIC_IP" ]]; then
+                echo "No public IP found."
+            else
+                # Check if the public IP is valid
+                if [[ "$PUBLIC_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    echo "Valid IP Address: $PUBLIC_IP"
+                    echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
                 else
-                    INSTANCE_ID=${INSTANCE_IDS[0]}
+                    echo "Invalid IP Address: $PUBLIC_IP"
                 fi
-        
-            if [ -z "$INSTANCE_ID" ]; then
-                echo "No running instance found. Exiting..."
-                exit 1
             fi
-        
-            while true; do
-                INSTANCE_LIFECYCLE_STATE=$(oci compute instance get \
-                    --instance-id "$INSTANCE_ID" \
-                    --query "data.\"lifecycle-state\"" \
-                    --raw-output)
-        
-                echo "Current instance state: $INSTANCE_LIFECYCLE_STATE"
-        
-                case "$INSTANCE_LIFECYCLE_STATE" in
-                    "RUNNING")
-                        echo "Instance is running, proceeding with deployment."
-                        PUBLIC_IP=$(oci compute instance list-vnics \
-                            --instance-id "$INSTANCE_ID" \
-                            --query "data[0].\"public-ip\"" \
-                            --raw-output)
-                        echo "Instance Public IP: $PUBLIC_IP"
-                        echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
-                        break
-                        ;;
-                    "STOPPED")
-                        echo "Instance is stopped. Cannot proceed with deployment."
-                        exit 1
-                        ;;
-                    "STARTING")
-                        echo "Instance is starting. Waiting for it to be fully up..."
-                        ;;
-                    "STOPPING")
-                        echo "Instance is stopping. Waiting for it to be fully stopped..."
-                        ;;
-                    "TERMINATED")
-                        echo "Instance is terminated. Cannot proceed with deployment."
-                        exit 1
-                        ;;
-                    *)
-                        echo "Unexpected instance state: $INSTANCE_LIFECYCLE_STATE. Retrying..."
-                        ;;
-                esac
-        
-                sleep 10
-                
-            done
-        
-            echo "Instance is running, proceeding with deployment."
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
