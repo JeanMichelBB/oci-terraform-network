@@ -1,0 +1,55 @@
+- name: Configure OCI Instance and Deploy React App
+  hosts: oci_instances
+  become: true
+  tasks:
+    - name: Load environment variables
+      set_fact:
+        docker_username: "{{ lookup('env', 'DOCKER_USERNAME') }}"
+        docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
+
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker and enable on boot
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Log in to Docker Hub
+      command: docker login -u {{ docker_username }} -p {{ docker_password }}
+      no_log: true
+
+    - name: Create React App systemd service
+      copy:
+        dest: /etc/systemd/system/react-app.service
+        content: |
+          [Unit]
+          Description=React App Docker Container
+          After=network.target
+
+          [Service]
+          ExecStartPre=/usr/bin/docker pull jeanmichelbb/oci-react:latest
+          ExecStart=/usr/bin/docker run -p 80:80 --name react-app jeanmichelbb/oci-react:latest
+          ExecStop=/usr/bin/docker stop react-app
+          ExecStopPost=/usr/bin/docker rm react-app
+          Restart=always
+          RestartSec=5s
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Restart React App Service
+
+  handlers:
+    - name: Restart React App Service
+      systemd:
+        name: react-app
+        state: restarted
+        enabled: true

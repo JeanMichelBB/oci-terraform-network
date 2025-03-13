@@ -1,0 +1,98 @@
+name: Deploy to OCI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up OCI CLI
+        uses: oracle-actions/run-oci-cli-command@v1.3.2
+        with:
+            command: "oci -v"
+            silent: false
+
+      - name: Configure OCI CLI
+        env:
+            OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+            OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+            OCI_REGION: ${{ secrets.OCI_REGION }}
+            OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+            OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
+        run: |
+            mkdir -p ~/.oci
+            echo "[DEFAULT]" > ~/.oci/config
+            echo "user=${OCI_USER_OCID}" >> ~/.oci/config
+            echo "fingerprint=${OCI_KEY_FINGERPRINT}" >> ~/.oci/config
+            echo "tenancy=${OCI_TENANCY_OCID}" >> ~/.oci/config
+            echo "region=${OCI_REGION}" >> ~/.oci/config
+            echo "${OCI_PRIVATE_KEY}" > ~/.oci/oci_private_key.pem
+            chmod 600 ~/.oci/oci_private_key.pem
+            echo "key_file=~/.oci/oci_private_key.pem" >> ~/.oci/config
+            chmod 600 ~/.oci/config
+            echo "Config file created at ~/.oci/config"
+
+      - name: Check OCI Instance lifecycle state
+        run: |
+        
+            INSTANCE_LIFECYCLE_STATE=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --query "data[?\"display-name\"=='my-instance'].\"lifecycle-state\"" --raw-output)
+        
+            while true; do
+            
+                echo "Current instance state: $INSTANCE_LIFECYCLE_STATE"
+            
+                case "$INSTANCE_LIFECYCLE_STATE" in
+                    "RUNNING")
+                        echo "Instance is running, proceeding with deployment."
+                        
+                        INSTANCE_ID=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --query "data[?\"display-name\"=='my-instance'].id | [0]" --raw-output)
+                        PUBLIC_IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query "data[0].\"public-ip\"" --raw-output)
+                        echo "Instance Public IP: $PUBLIC_IP"
+                        echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+                        break
+                        ;;
+                    "STOPPED")
+                        echo "Instance is stopped. Cannot proceed with deployment."
+                        exit 1
+                        ;;
+                    "STARTING")
+                        echo "Instance is starting. Waiting for it to be fully up..."
+                        ;;
+                    "STOPPING")
+                        echo "Instance is stopping. Waiting for it to be fully stopped..."
+                        ;;
+                    "TERMINATED")
+                        echo "Instance is terminated. Cannot proceed with deployment."
+                        exit 1
+                        ;;
+                    *)
+                        echo "Unexpected instance state: $INSTANCE_LIFECYCLE_STATE. Retrying..."
+                        ;;
+                esac
+            
+                sleep 10
+
+            done
+
+            echo "Instance is running, proceeding with deployment."
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      - name: Get OCI Instance IP
+        run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+
+      - name: Run Ansible Playbook
+        env:
+            PUBLIC_IP: ${{ steps.get_ip.outputs.PUBLIC_IP }}  
+            SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+            DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+            ansible-playbook -i inventory.yaml deploy_oci.yaml
