@@ -40,19 +40,53 @@ jobs:
 
       - name: Check OCI Instance lifecycle state
         run: |
+            # Get all instance IDs with the name 'my-instance'
+            INSTANCE_IDS=($(oci compute instance list \
+                --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} \
+                --query "data[?\"display-name\"=='my-instance'].id" \
+                --raw-output))
         
-            INSTANCE_LIFECYCLE_STATE=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --query "data[?\"display-name\"=='my-instance'].\"lifecycle-state\"" --raw-output)
+            # Check if there are multiple instances
+                if [ ${#INSTANCE_IDS[@]} -gt 1 ]; then
+                    echo "Multiple instances found. Filtering for the running one."
+                    for ID in "${INSTANCE_IDS[@]}"; do
+                        STATE=$(oci compute instance get \
+                            --instance-id "$ID" \
+                            --query "data.\"lifecycle-state\"" \
+                            --raw-output)
+                        
+                        if [ "$STATE" == "RUNNING" ]; then
+                            INSTANCE_ID="$ID"
+                            echo "Found running instance: $INSTANCE_ID"
+                            break
+                        elif [ "$STATE" == "TERMINATED" ]; then
+                            echo "Instance $ID is terminated. Skipping..."
+                        fi
+                    done
+                else
+                    INSTANCE_ID=${INSTANCE_IDS[0]}
+                fi
+        
+            if [ -z "$INSTANCE_ID" ]; then
+                echo "No running instance found. Exiting..."
+                exit 1
+            fi
         
             while true; do
-            
+                INSTANCE_LIFECYCLE_STATE=$(oci compute instance get \
+                    --instance-id "$INSTANCE_ID" \
+                    --query "data.\"lifecycle-state\"" \
+                    --raw-output)
+        
                 echo "Current instance state: $INSTANCE_LIFECYCLE_STATE"
-            
+        
                 case "$INSTANCE_LIFECYCLE_STATE" in
                     "RUNNING")
                         echo "Instance is running, proceeding with deployment."
-                        
-                        INSTANCE_ID=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --query "data[?\"display-name\"=='my-instance'].id | [0]" --raw-output)
-                        PUBLIC_IP=$(oci compute instance list-vnics --instance-id $INSTANCE_ID --query "data[0].\"public-ip\"" --raw-output)
+                        PUBLIC_IP=$(oci compute instance list-vnics \
+                            --instance-id "$INSTANCE_ID" \
+                            --query "data[0].\"public-ip\"" \
+                            --raw-output)
                         echo "Instance Public IP: $PUBLIC_IP"
                         echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
                         break
@@ -75,11 +109,11 @@ jobs:
                         echo "Unexpected instance state: $INSTANCE_LIFECYCLE_STATE. Retrying..."
                         ;;
                 esac
-            
+        
                 sleep 10
-
+                
             done
-
+        
             echo "Instance is running, proceeding with deployment."
 
       - name: Install Ansible
