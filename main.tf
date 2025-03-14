@@ -59,39 +59,6 @@ resource "oci_core_instance" "my_instance" {
 
   metadata = {
     ssh_authorized_keys = var.public_key
-  #   user_data = base64encode(<<-EOF
-  #     #!/bin/bash
-  #     apt-get update -y
-  #     apt-get install -y docker.io
-  #     systemctl enable --now docker
-
-  #     # Docker login 
-  #     docker login -u ${var.username} -p ${var.password}
-
-  #     # Create the systemd service to run the React app container
-  #     cat <<EOF2 > /etc/systemd/system/react-app.service
-  #     [Unit]
-  #     Description=React App Docker Container
-  #     After=network.target
-
-  #     [Service]
-  #     ExecStartPre=/usr/bin/docker pull jeanmichelbb/oci-react:latest
-  #     ExecStart=/usr/bin/docker run -p 80:80 --name react-app jeanmichelbb/oci-react:latest
-  #     ExecStop=/usr/bin/docker stop react-app
-  #     ExecStopPost=/usr/bin/docker rm react-app
-  #     Restart=always
-  #     RestartSec=5s
-
-  #     [Install]
-  #     WantedBy=multi-user.target
-  #     EOF2
-
-  #     # Reload systemd configuration, enable and start the service
-  #     systemctl daemon-reload
-  #     systemctl enable react-app.service
-  #     systemctl start react-app.service
-  # EOF
-  #   )
   }
 
   timeouts {
@@ -185,3 +152,76 @@ resource "oci_core_network_security_group_security_rule" "network_security_group
   protocol                  = "1"
   source                    = "0.0.0.0/0"
 }
+
+resource "oci_container_instances_container_instance" "container_instance" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id = var.compartment_id
+  display_name   = "my-container-instance"
+  shape          = "VM.Standard.E2.1.Micro"
+  shape_config {
+    memory_in_gbs = 1
+    ocpus         = 1
+  }
+  vnics {
+    subnet_id             = oci_core_subnet.my_subnet.id
+    display_name          = "my-vnic"
+    is_public_ip_assigned = true
+    nsg_ids               = []
+  }
+  freeform_tags = {
+    "ssh_authorized_keys" = var.public_key
+  }
+  containers {
+
+    image_url    = "jeanmichelbb/oci-react:latest"
+    display_name = "react-app"
+    command      = ["/usr/sbin/nginx", "-g", "daemon off;"]
+
+  }
+  timeouts {
+    create = "60m"
+  }
+}
+
+
+# oci container-instances container update \
+#   --container-instance-id <instance_id> \
+#   --container-name react-app \
+#   --image-url "jeanmichelbb/oci-react:latest"
+
+# PUBLIC_IP=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --sort-by TIMECREATED --all --query "data[0].id" --raw-output | xargs -I {} oci compute instance list-vnics --instance-id {} --query "data[0].\"public-ip\"" --raw-output)
+# echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+
+#   user_data = base64encode(<<-EOF
+#     #!/bin/bash
+#     apt-get update -y
+#     apt-get install -y docker.io
+#     systemctl enable --now docker
+
+#     # Docker login 
+#     docker login -u ${var.username} -p ${var.password}
+
+#     # Create the systemd service to run the React app container
+#     cat <<EOF2 > /etc/systemd/system/react-app.service
+#     [Unit]
+#     Description=React App Docker Container
+#     After=network.target
+
+#     [Service]
+#     ExecStartPre=/usr/bin/docker pull jeanmichelbb/oci-react:latest
+#     ExecStart=/usr/bin/docker run -p 80:80 --name react-app jeanmichelbb/oci-react:latest
+#     ExecStop=/usr/bin/docker stop react-app
+#     ExecStopPost=/usr/bin/docker rm react-app
+#     Restart=always
+#     RestartSec=5s
+
+#     [Install]
+#     WantedBy=multi-user.target
+#     EOF2
+
+#     # Reload systemd configuration, enable and start the service
+#     systemctl daemon-reload
+#     systemctl enable react-app.service
+#     systemctl start react-app.service
+# EOF
+#   )
