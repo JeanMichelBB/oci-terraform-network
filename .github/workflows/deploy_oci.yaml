@@ -39,7 +39,6 @@ jobs:
             echo "Config file created at ~/.oci/config"
 
       - name: Fetch instance public IP
-        id: get_ip
         run: |
           PUBLIC_IP=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --sort-by TIMECREATED --all --query "data[0].id" --raw-output | xargs -I {} oci compute instance list-vnics --instance-id {} --query "data[0].\"public-ip\"" --raw-output)
           echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
@@ -49,7 +48,7 @@ jobs:
 
       - name: Set up SSH private key
         run: |
-          # Create a private key file from GitHub Secrets
+          mkdir -p ~/.ssh 
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/oci_private_key.pem
           chmod 600 ~/.ssh/oci_private_key.pem  # Set proper permissions
 
