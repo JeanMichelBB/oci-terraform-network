@@ -39,27 +39,13 @@ jobs:
             echo "Config file created at ~/.oci/config"
 
       - name: Fetch instance public IP
+        id: get_ip
         run: |
-            PUBLIC_IP=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_OCID }} --query "data[?\"display-name\"=='my-instance'].id" --raw-output | jq -r '.[] | "oci compute instance list-vnics --instance-id \(. ) --query \"data[0].\\\"public-ip\\\"\" --raw-output"' | sh)
-
-            # Check if we received an IP address
-            if [[ -z "$PUBLIC_IP" ]]; then
-                echo "No public IP found."
-            else
-                # Check if the public IP is valid
-                if [[ "$PUBLIC_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                    echo "Valid IP Address: $PUBLIC_IP"
-                    echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
-                else
-                    echo "Invalid IP Address: $PUBLIC_IP"
-                fi
-            fi
+          PUBLIC_IP=$(oci compute instance list --compartment-id ${{ secrets.OCI_COMPARTMENT_ID }} --sort-by TIMECREATED --all --query "data[0].id" --raw-output | xargs -I {} oci compute instance list-vnics --instance-id {} --query "data[0].\"public-ip\"" --raw-output)
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
-
-      - name: Get OCI Instance IP
-        run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
       - name: Run Ansible Playbook
         env:
@@ -69,3 +55,5 @@ jobs:
             DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
             ansible-playbook -i inventory.yaml deploy_oci.yaml
+
+
