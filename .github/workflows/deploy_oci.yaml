@@ -47,13 +47,23 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
+      - name: Set up SSH private key
+        run: |
+          # Create a private key file from GitHub Secrets
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/oci_private_key.pem
+          chmod 600 ~/.ssh/oci_private_key.pem  # Set proper permissions
+
+      - name: Add instance to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.PUBLIC_IP }} >> ~/.ssh/known_hosts
+
       - name: Run Ansible Playbook
         env:
-            PUBLIC_IP: ${{ env.PUBLIC_IP }}
-            SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+            PUBLIC_IP: ${{ env.PUBLIC_IP }}  
+            SSH_PRIVATE_KEY: ~/.ssh/oci_private_key.pem
             DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
             DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
             ansible-playbook -i inventory.yaml deploy_oci.yaml
-
 
