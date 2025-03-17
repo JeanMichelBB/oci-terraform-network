@@ -153,37 +153,6 @@ resource "oci_core_network_security_group_security_rule" "network_security_group
   source                    = "0.0.0.0/0"
 }
 
-resource "oci_container_instances_container_instance" "container_instance" {
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-  compartment_id = var.compartment_id
-  display_name   = "my-container-instance"
-  shape          = "VM.Standard.E2.1.Micro"
-  shape_config {
-    memory_in_gbs = 1
-    ocpus         = 1
-  }
-  vnics {
-    subnet_id             = oci_core_subnet.my_subnet.id
-    display_name          = "my-vnic"
-    is_public_ip_assigned = true
-    nsg_ids               = []
-  }
-  freeform_tags = {
-    "ssh_authorized_keys" = var.public_key
-  }
-  containers {
-
-    image_url    = "jeanmichelbb/oci-react:latest"
-    display_name = "react-app"
-    command      = ["/usr/sbin/nginx", "-g", "daemon off;"]
-
-  }
-  timeouts {
-    create = "60m"
-  }
-}
-
-
 # oci container-instances container update \
 #   --container-instance-id <instance_id> \
 #   --container-name react-app \
