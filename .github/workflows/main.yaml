@@ -41,7 +41,7 @@ jobs:
       - name: Check if the instance is running
         run: |
             instance_state=$(oci compute instance list \
-            --compartment-id $OCI_TENANCY_OCID \
+            --compartment-id  ${{ secrets.OCI_COMPARTMENT_ID }} \
             --query "data[?\"lifecycle-state\"=='RUNNING'] | sort_by(@, &\"time-created\") | [-1].\"lifecycle-state\"" \
             --output json | jq -r '.')
 
@@ -49,7 +49,7 @@ jobs:
             sleep 10
             
             instance_state=$(oci compute instance list \
-                --compartment-id $OCI_TENANCY_OCID \
+                --compartment-id  ${{ secrets.OCI_COMPARTMENT_ID }} \
                 --query "data[?\"lifecycle-state\"=='RUNNING'] | sort_by(@, &\"time-created\") | [-1].\"lifecycle-state\"" \
                 --output json | jq -r '.')
             done
