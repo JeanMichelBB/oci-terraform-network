@@ -1,26 +1,26 @@
 
-# provider "oci" {
-#   tenancy_ocid = var.tenancy_ocid
-#   user_ocid    = var.user_ocid
-#   fingerprint  = var.fingerprint
-#   private_key  = base64decode(var.private_key)
-#   region       = var.region
-# }
+provider "oci" {
+  tenancy_ocid = var.tenancy_ocid
+  user_ocid    = var.user_ocid
+  fingerprint  = var.fingerprint
+  private_key  = base64decode(var.private_key)
+  region       = var.region
+}
 
-# resource "oci_core_vcn" "main" {
-#   compartment_id = var.compartment_id
-#   cidr_block     = var.vcn_cidr
-#   display_name   = "MyVCN"
-#   dns_label      = "myvcn"
-# }
+resource "oci_core_vcn" "main" {
+  compartment_id = var.compartment_id
+  cidr_block     = var.vcn_cidr
+  display_name   = "MyVCN"
+  dns_label      = "myvcn"
+}
 
-# data "oci_identity_availability_domains" "ads" {
-#   compartment_id = var.compartment_id
-# }
+data "oci_identity_availability_domains" "ads" {
+  compartment_id = var.compartment_id
+}
 
-# output "availability_domain_name" {
-#   value = data.oci_identity_availability_domains.ads.availability_domains[0].name
-# }
+output "availability_domain_name" {
+  value = data.oci_identity_availability_domains.ads.availability_domains[0].name
+}
 
 # resource "oci_core_subnet" "my_subnet" {
 #   cidr_block          = "10.0.1.0/24"
