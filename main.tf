@@ -69,7 +69,7 @@ resource "oci_core_instance" "my_instance" {
 
 resource "oci_core_volume" "my_volume" {
   count               = var.instance_count
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[count.index % length(data.oci_identity_availability_domains.ads.availability_domains)].name
   compartment_id      = var.compartment_id
   display_name        = "my-volume-${count.index + 1}"
   size_in_gbs         = 50
