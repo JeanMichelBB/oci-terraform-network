@@ -55,7 +55,7 @@ variable "subnet_cidrs" {
 variable "instance_image_ocid" {
   type = map(string)
   default = {
-    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaaboblnxwpnu7qujwuvbnawt7bvmmmnilhzah6qp44fppe2pggpviq"
+    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaaubauavptznwfdaor3im3jy5zsqt5crre3opl4ty6tehmfqunmjca"
   }
 }
 variable "instance_shape" {
@@ -79,7 +79,7 @@ variable "instance_name" {
   default = "my-instance"
 }
 variable "boot_volume_size_in_gbs" {
-  default     = "100"
+  default     = "50"
   description = "Bott volume size in GBs"
   type        = number
 }
