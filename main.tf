@@ -33,24 +33,21 @@ resource "oci_core_subnet" "my_subnet" {
 }
 
 resource "oci_core_instance" "my_instance" {
-  count               = var.instance_count
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[count.index % length(data.oci_identity_availability_domains.ads.availability_domains)].name
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
   shape               = var.instance_shape
-  display_name        = "${var.instance_name}-${count.index + 1}"
-  lifecycle {
-    create_before_destroy = true
-  }
+  display_name        = "my-instance"
+
   shape_config {
     ocpus         = var.instance_ocpus
     memory_in_gbs = var.instance_shape_config_memory_in_gbs
   }
   create_vnic_details {
     subnet_id                 = oci_core_subnet.my_subnet.id
-    display_name              = "my-vnic-${count.index + 1}"
+    display_name              = "my-vnic"
     assign_public_ip          = true
     assign_private_dns_record = true
-    hostname_label            = "myhostname${count.index + 1}"
+    hostname_label            = "myhostname"
   }
   source_details {
     source_type             = "image"
@@ -68,17 +65,15 @@ resource "oci_core_instance" "my_instance" {
 }
 
 resource "oci_core_volume" "my_volume" {
-  count               = var.instance_count
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[count.index % length(data.oci_identity_availability_domains.ads.availability_domains)].name
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
-  display_name        = "my-volume-${count.index + 1}"
+  display_name        = "my-volume"
   size_in_gbs         = 50
 }
 
 resource "oci_core_volume_attachment" "my_volume_attachment" {
-  count           = var.instance_count
-  instance_id     = oci_core_instance.my_instance[count.index].id
-  volume_id       = oci_core_volume.my_volume[count.index].id
+  instance_id     = oci_core_instance.my_instance.id
+  volume_id       = oci_core_volume.my_volume.id
   attachment_type = "iscsi"
 }
 

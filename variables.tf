@@ -55,21 +55,21 @@ variable "subnet_cidrs" {
 variable "instance_image_ocid" {
   type = map(string)
   default = {
-    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaaubauavptznwfdaor3im3jy5zsqt5crre3opl4ty6tehmfqunmjca"
+    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaa5d4pqtue7bivcsharkzky3xgiixmmychclwozjfsxdp7ttree2tq"
   }
 }
 variable "instance_shape" {
   type        = string
   description = "The shape of the instance"
-  default     = "VM.Standard.A1.Flex"
+  default     = "VM.Standard.E2.1.Micro"
 }
 variable "instance_ocpus" {
-  default     = 2
+  default     = 1
   description = "Number of OCPUs"
   type        = number
 }
 variable "instance_shape_config_memory_in_gbs" {
-  default     = 12
+  default     = 1
   description = "Amount of Memory (GB)"
   type        = number
 }
@@ -90,9 +90,4 @@ variable "username" {
 variable "password" {
   description = "SSH Authorized Keys"
   type        = string
-}
-variable "instance_count" {
-  description = "Number of instances to create"
-  type        = number
-  default     = 2
 }
