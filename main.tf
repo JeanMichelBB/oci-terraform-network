@@ -72,7 +72,7 @@ resource "oci_core_volume" "my_volume" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
   display_name        = "my-volume-${count.index + 1}"
-  size_in_gbs         = 50
+  size_in_gbs         = 100
 }
 
 resource "oci_core_volume_attachment" "my_volume_attachment" {
