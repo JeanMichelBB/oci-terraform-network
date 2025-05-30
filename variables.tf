@@ -79,7 +79,7 @@ variable "instance_name" {
   default = "my-instance"
 }
 variable "boot_volume_size_in_gbs" {
-  default     = "50"
+  default     = "100"
   description = "Bott volume size in GBs"
   type        = number
 }
