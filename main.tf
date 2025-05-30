@@ -29,28 +29,29 @@ resource "oci_core_subnet" "my_subnet" {
   vcn_id              = oci_core_vcn.main.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   # security_list_ids   = [oci_core_security_list.cluster_security_group.id]
-  dns_label           = "mysubnet"
+  dns_label = "mysubnet"
 }
 
 resource "oci_core_instance" "my_instance" {
+  count               = var.instance_count
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
   shape               = var.instance_shape
-  display_name        = "my-instance"
-
+  display_name        = "${var.instance_name}-${count.index + 1}"
+  lifecycle {
+    create_before_destroy = true
+  }
   shape_config {
     ocpus         = var.instance_ocpus
     memory_in_gbs = var.instance_shape_config_memory_in_gbs
   }
-
   create_vnic_details {
     subnet_id                 = oci_core_subnet.my_subnet.id
-    display_name              = "my-vnic"
+    display_name              = "my-vnic-${count.index + 1}"
     assign_public_ip          = true
     assign_private_dns_record = true
-    hostname_label            = "myhostname"
+    hostname_label            = "myhostname${count.index + 1}"
   }
-
   source_details {
     source_type             = "image"
     source_id               = var.instance_image_ocid[var.region]
@@ -67,15 +68,17 @@ resource "oci_core_instance" "my_instance" {
 }
 
 resource "oci_core_volume" "my_volume" {
+  count               = var.instance_count
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
-  display_name        = "my-volume"
-  size_in_gbs         = 50
+  display_name        = "my-volume-${count.index + 1}"
+  size_in_gbs         = 100
 }
 
 resource "oci_core_volume_attachment" "my_volume_attachment" {
-  instance_id     = oci_core_instance.my_instance.id
-  volume_id       = oci_core_volume.my_volume.id
+  count           = var.instance_count
+  instance_id     = oci_core_instance.my_instance[count.index].id
+  volume_id       = oci_core_volume.my_volume[count.index].id
   attachment_type = "iscsi"
 }
 
@@ -108,15 +111,15 @@ resource "oci_core_security_list" "cluster_security_group" {
   }
 
   ingress_security_rules {
-    protocol    = "6"
-    source      = "0.0.0.0/0"
+    protocol = "6"
+    source   = "0.0.0.0/0"
     tcp_options {
       min = 443
       max = 443
     }
   }
-    egress_security_rules {
-    protocol = "all"
+  egress_security_rules {
+    protocol    = "all"
     destination = "0.0.0.0/0"
   }
 }
