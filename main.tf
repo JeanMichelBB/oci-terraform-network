@@ -33,10 +33,11 @@ resource "oci_core_subnet" "my_subnet" {
 }
 
 resource "oci_core_instance" "my_instance" {
+  count               = var.instance_count
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
   shape               = var.instance_shape
-  display_name        = "my-instance"
+  display_name        = "${var.instance_name}-${count.index + 1}"
 
   shape_config {
     ocpus         = var.instance_ocpus
@@ -45,10 +46,10 @@ resource "oci_core_instance" "my_instance" {
 
   create_vnic_details {
     subnet_id                 = oci_core_subnet.my_subnet.id
-    display_name              = "my-vnic"
+    display_name              = "my-vnic-${count.index + 1}"
     assign_public_ip          = true
     assign_private_dns_record = true
-    hostname_label            = "myhostname"
+    hostname_label            = "myhostname${count.index + 1}"
   }
 
   source_details {
@@ -67,15 +68,17 @@ resource "oci_core_instance" "my_instance" {
 }
 
 resource "oci_core_volume" "my_volume" {
+  count               = var.instance_count
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
-  display_name        = "my-volume"
+  display_name        = "my-volume-${count.index + 1}"
   size_in_gbs         = 50
 }
 
 resource "oci_core_volume_attachment" "my_volume_attachment" {
-  instance_id     = oci_core_instance.my_instance.id
-  volume_id       = oci_core_volume.my_volume.id
+  count           = var.instance_count
+  instance_id     = oci_core_instance.my_instance[count.index].id
+  volume_id       = oci_core_volume.my_volume[count.index].id
   attachment_type = "iscsi"
 }
 
