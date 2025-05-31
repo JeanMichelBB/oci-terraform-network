@@ -28,7 +28,7 @@ resource "oci_core_subnet" "my_subnet" {
   compartment_id      = var.compartment_id
   vcn_id              = oci_core_vcn.main.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-  # security_list_ids   = [oci_core_security_list.cluster_security_group.id]
+  security_list_ids   = [oci_core_security_list.cluster_security_group.id]
   dns_label = "mysubnet"
 }
 
