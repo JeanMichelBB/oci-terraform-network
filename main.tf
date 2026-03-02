@@ -22,63 +22,63 @@ output "availability_domain_name" {
   value = data.oci_identity_availability_domains.ads.availability_domains[0].name
 }
 
-# resource "oci_core_subnet" "my_subnet" {
-#   cidr_block          = "10.0.1.0/24"
-#   display_name        = "my-subnet"
-#   compartment_id      = var.compartment_id
-#   vcn_id              = oci_core_vcn.main.id
-#   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-#   security_list_ids   = [oci_core_security_list.cluster_security_group.id]
-#   dns_label = "mysubnet"
-# }
+resource "oci_core_subnet" "my_subnet" {
+  cidr_block          = "10.0.1.0/24"
+  display_name        = "my-subnet"
+  compartment_id      = var.compartment_id
+  vcn_id              = oci_core_vcn.main.id
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  security_list_ids   = [oci_core_security_list.cluster_security_group.id]
+  dns_label = "mysubnet"
+}
 
-# resource "oci_core_instance" "my_instance" {
-#   count               = 2
-#   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-#   compartment_id      = var.compartment_id
-#   shape               = var.instance_shape
-#   display_name        = "my-instance-${count.index}"
+resource "oci_core_instance" "my_instance" {
+  count               = 2
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_id
+  shape               = var.instance_shape
+  display_name        = "my-instance-${count.index}"
 
-#   shape_config {
-#     ocpus         = var.instance_ocpus
-#     memory_in_gbs = var.instance_shape_config_memory_in_gbs
-#   }
-#   create_vnic_details {
-#     subnet_id                 = oci_core_subnet.my_subnet.id
-#     display_name              = "my-vnic-${count.index}"
-#     assign_public_ip          = true
-#     assign_private_dns_record = true
-#     hostname_label            = "myhostname${count.index}"
-#   }
-#   source_details {
-#     source_type             = "image"
-#     source_id               = var.instance_image_ocid[var.region]
-#     boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
-#   }
+  shape_config {
+    ocpus         = var.instance_ocpus
+    memory_in_gbs = var.instance_shape_config_memory_in_gbs
+  }
+  create_vnic_details {
+    subnet_id                 = oci_core_subnet.my_subnet.id
+    display_name              = "my-vnic-${count.index}"
+    assign_public_ip          = true
+    assign_private_dns_record = true
+    hostname_label            = "myhostname${count.index}"
+  }
+  source_details {
+    source_type             = "image"
+    source_id               = var.instance_image_ocid[var.region]
+    boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
+  }
 
-#   metadata = {
-#     ssh_authorized_keys = var.public_key
-#   }
+  metadata = {
+    ssh_authorized_keys = var.public_key
+  }
 
-#   timeouts {
-#     create = "60m"
-#   }
-# }
+  timeouts {
+    create = "60m"
+  }
+}
 
-# resource "oci_core_volume" "my_volume" {
-#   count               = 2
-#   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-#   compartment_id      = var.compartment_id
-#   display_name        = "my-volume-${count.index}"
-#   size_in_gbs         = 50
-# }
+resource "oci_core_volume" "my_volume" {
+  count               = 2
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_id
+  display_name        = "my-volume-${count.index}"
+  size_in_gbs         = 50
+}
 
-# resource "oci_core_volume_attachment" "my_volume_attachment" {
-#   count           = 2
-#   instance_id     = oci_core_instance.my_instance[count.index].id
-#   volume_id       = oci_core_volume.my_volume[count.index].id
-#   attachment_type = "iscsi"
-# }
+resource "oci_core_volume_attachment" "my_volume_attachment" {
+  count           = 2
+  instance_id     = oci_core_instance.my_instance[count.index].id
+  volume_id       = oci_core_volume.my_volume[count.index].id
+  attachment_type = "iscsi"
+}
 
 resource "oci_core_security_list" "cluster_security_group" {
   compartment_id = var.compartment_id
