@@ -55,21 +55,21 @@ variable "subnet_cidrs" {
 variable "instance_image_ocid" {
   type = map(string)
   default = {
-    ca-montreal-1     = "ocid1.image.oc1.ca-montreal-1.aaaaaaaa5d4pqtue7bivcsharkzky3xgiixmmychclwozjfsxdp7ttree2tq"
+    ca-montreal-1 = "ocid1.image.oc1.ca-montreal-1.aaaaaaaaxmlyjtlaoyy5yza76ihp4uvrq6x6mvyasjhynf4dhk32vev2j2hq"
   }
 }
 variable "instance_shape" {
   type        = string
   description = "The shape of the instance"
-  default     = "VM.Standard.E2.1.Micro"
+  default     = "VM.Standard.A1.Flex"
 }
 variable "instance_ocpus" {
-  default     = 1
+  default     = 2
   description = "Number of OCPUs"
   type        = number
 }
 variable "instance_shape_config_memory_in_gbs" {
-  default     = 1
+  default     = 6
   description = "Amount of Memory (GB)"
   type        = number
 }
