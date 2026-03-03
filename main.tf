@@ -1,4 +1,3 @@
-
 provider "oci" {
   tenancy_ocid = var.tenancy_ocid
   user_ocid    = var.user_ocid
@@ -29,7 +28,7 @@ resource "oci_core_subnet" "my_subnet" {
   vcn_id              = oci_core_vcn.main.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   security_list_ids   = [oci_core_security_list.cluster_security_group.id]
-  dns_label = "mysubnet"
+  dns_label           = "mysubnet"
 }
 
 resource "oci_core_instance" "my_instance" {
@@ -85,14 +84,6 @@ resource "oci_core_security_list" "cluster_security_group" {
   vcn_id         = oci_core_vcn.main.id
   display_name   = "cluster-security-group"
 
-  ingress_security_rules {
-    protocol = "6"
-    source   = "0.0.0.0/0"
-    tcp_options {
-      min = 80
-      max = 80
-    }
-  }
 
   ingress_security_rules {
     protocol = "6"
@@ -107,13 +98,12 @@ resource "oci_core_security_list" "cluster_security_group" {
     protocol = "8"
     source   = "0.0.0.0/0"
   }
-
   ingress_security_rules {
-    protocol = "6"
+    protocol = "17"
     source   = "0.0.0.0/0"
-    tcp_options {
-      min = 443
-      max = 443
+    udp_options {
+      min = 41641
+      max = 41641
     }
   }
   egress_security_rules {
