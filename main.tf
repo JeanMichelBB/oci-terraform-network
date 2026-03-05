@@ -29,6 +29,8 @@ resource "oci_core_subnet" "my_subnet" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   security_list_ids   = [oci_core_security_list.cluster_security_group.id]
   dns_label           = "mysubnet"
+  # FIX: Explicitly attach the default route table so subnet uses internet gateway
+  route_table_id      = oci_core_default_route_table.default_route_table.id
 }
 
 resource "oci_core_instance" "my_instance" {
@@ -42,6 +44,7 @@ resource "oci_core_instance" "my_instance" {
     ocpus         = var.instance_ocpus
     memory_in_gbs = var.instance_shape_config_memory_in_gbs
   }
+
   create_vnic_details {
     subnet_id                 = oci_core_subnet.my_subnet.id
     display_name              = "my-vnic-${count.index}"
@@ -49,6 +52,7 @@ resource "oci_core_instance" "my_instance" {
     assign_private_dns_record = true
     hostname_label            = "myhostname${count.index}"
   }
+
   source_details {
     source_type             = "image"
     source_id               = var.instance_image_ocid[var.region]
@@ -84,6 +88,7 @@ resource "oci_core_security_list" "cluster_security_group" {
   vcn_id         = oci_core_vcn.main.id
   display_name   = "cluster-security-group"
 
+  # SSH — Tailscale IPs only
   ingress_security_rules {
     protocol = "6"
     source   = "0.0.0.0/0"
@@ -93,7 +98,7 @@ resource "oci_core_security_list" "cluster_security_group" {
     }
   }
 
-    ingress_security_rules {
+  ingress_security_rules {
     protocol = "17"
     source   = "0.0.0.0/0"
     udp_options {
@@ -117,7 +122,7 @@ resource "oci_core_security_list" "cluster_security_group" {
     tcp_options {
       min = 10250
       max = 10250
-    } 
+    }
   }
 
   ingress_security_rules {
@@ -128,6 +133,7 @@ resource "oci_core_security_list" "cluster_security_group" {
       max = 80
     }
   }
+
   ingress_security_rules {
     protocol = "6"
     source   = "0.0.0.0/0"
@@ -136,24 +142,26 @@ resource "oci_core_security_list" "cluster_security_group" {
       max = 443
     }
   }
+
+  egress_security_rules {
+    protocol    = "all"
+    destination = "0.0.0.0/0"
+  }
 }
 resource "oci_core_internet_gateway" "internet_gateway" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.main.id
-
-  display_name = oci_core_vcn.main.display_name
+  display_name   = oci_core_vcn.main.display_name
 }
 
 resource "oci_core_default_route_table" "default_route_table" {
   manage_default_resource_id = oci_core_vcn.main.default_route_table_id
-
-  display_name = oci_core_vcn.main.display_name
+  display_name               = oci_core_vcn.main.display_name
 
   route_rules {
     network_entity_id = oci_core_internet_gateway.internet_gateway.id
-
-    description = "Default route"
-    destination = "0.0.0.0/0"
+    description       = "Default route to internet"
+    destination       = "0.0.0.0/0"
   }
 }
 
