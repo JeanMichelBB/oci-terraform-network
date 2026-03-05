@@ -92,76 +92,13 @@ resource "oci_core_security_list" "cluster_security_group" {
       max = 22
     }
   }
-
-  ingress_security_rules {
-    protocol = "6"
-    source   = "0.0.0.0/0"
-    tcp_options {
-      min = 2379
-      max = 2380
-    }
-  }
-
-  ingress_security_rules {
-    protocol = "6"
-    source   = "0.0.0.0/0"
-    tcp_options {
-      min = 6443
-      max = 6443
-    }
-  }
-
-  ingress_security_rules {
+# 41641UDP
+    ingress_security_rules {
     protocol = "17"
     source   = "0.0.0.0/0"
     udp_options {
-      min = 8472
-      max = 8472
-    }
-  }
-
-  ingress_security_rules {
-    protocol = "6"
-    source   = "0.0.0.0/0"
-    tcp_options {
-      min = 10250
-      max = 10250
-    }
-  }
-
-  ingress_security_rules {
-    protocol = "17"
-    source   = "0.0.0.0/0"
-    udp_options {
-      min = 51820
-      max = 51820
-    }
-  }
-
-  ingress_security_rules {
-    protocol = "17"
-    source   = "0.0.0.0/0"
-    udp_options {
-      min = 51821
-      max = 51821
-    }
-  }
-
-  ingress_security_rules {
-    protocol = "6"
-    source   = "0.0.0.0/0"
-    tcp_options {
-      min = 5001
-      max = 5001
-    }
-  }
-
-  ingress_security_rules {
-    protocol = "6"
-    source   = "0.0.0.0/0"
-    tcp_options {
-      min = 6443
-      max = 6443
+      min = 41641
+      max = 41641
     }
   }
 
