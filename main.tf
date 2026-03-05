@@ -92,7 +92,7 @@ resource "oci_core_security_list" "cluster_security_group" {
       max = 22
     }
   }
-# 41641UDP
+
     ingress_security_rules {
     protocol = "17"
     source   = "0.0.0.0/0"
@@ -102,9 +102,22 @@ resource "oci_core_security_list" "cluster_security_group" {
     }
   }
 
-  egress_security_rules {
-    protocol    = "all"
-    destination = "0.0.0.0/0"
+  ingress_security_rules {
+    protocol = "17"
+    source   = "0.0.0.0/0"
+    udp_options {
+      min = 8472
+      max = 8472
+    }
+  }
+
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 10250
+      max = 10250
+    } 
   }
 }
 resource "oci_core_internet_gateway" "internet_gateway" {
