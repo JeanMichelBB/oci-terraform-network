@@ -119,6 +119,23 @@ resource "oci_core_security_list" "cluster_security_group" {
       max = 10250
     } 
   }
+
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 80
+      max = 80
+    }
+  }
+  ingress_security_rules {
+    protocol = "6"
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 443
+      max = 443
+    }
+  }
 }
 resource "oci_core_internet_gateway" "internet_gateway" {
   compartment_id = var.compartment_id
